@@ -1,0 +1,2583 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Adaptive Monte Carlo BER Simulator</title>
+
+<style>
+:root {
+    --bg: #07111f;
+    --panel: #0d1b2a;
+    --panel2: #11263a;
+    --border: #243e56;
+    --text: #eaf4ff;
+    --muted: #8fa9bf;
+    --primary: #26c6da;
+    --secondary: #7c4dff;
+    --success: #32d583;
+    --warning: #ffb020;
+    --danger: #ff5c70;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family:
+        Inter,
+        ui-sans-serif,
+        system-ui,
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        sans-serif;
+
+    background:
+        radial-gradient(circle at 10% 10%, #123451 0, transparent 30%),
+        radial-gradient(circle at 90% 20%, #24154c 0, transparent 28%),
+        linear-gradient(135deg, #050b14, #091522 55%, #0b1624);
+
+    color: var(--text);
+    min-height: 100vh;
+}
+
+/* ================= HEADER ================= */
+
+.header {
+    padding: 30px 5%;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    background: rgba(5,12,22,0.65);
+    backdrop-filter: blur(15px);
+}
+
+.header-inner {
+    max-width: 1450px;
+    margin: auto;
+}
+
+.badge {
+    display: inline-block;
+    padding: 6px 12px;
+    border-radius: 30px;
+    background: rgba(38,198,218,0.12);
+    color: var(--primary);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    margin-bottom: 12px;
+}
+
+.header h1 {
+    margin: 0;
+    font-size: clamp(28px, 4vw, 48px);
+    line-height: 1.1;
+}
+
+.header p {
+    max-width: 800px;
+    color: var(--muted);
+    margin-top: 12px;
+    font-size: 15px;
+}
+
+/* ================= LAYOUT ================= */
+
+.container {
+    max-width: 1450px;
+    margin: auto;
+    padding: 30px 5%;
+}
+
+.layout {
+    display: grid;
+    grid-template-columns: 350px 1fr;
+    gap: 22px;
+}
+
+/* ================= CARD ================= */
+
+.card {
+    background:
+        linear-gradient(
+            145deg,
+            rgba(255,255,255,0.055),
+            rgba(255,255,255,0.018)
+        );
+
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 18px;
+    padding: 22px;
+    box-shadow: 0 15px 45px rgba(0,0,0,0.25);
+}
+
+.card + .card {
+    margin-top: 18px;
+}
+
+.card-title {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 18px;
+}
+
+.card-title h2 {
+    font-size: 18px;
+    margin: 0;
+}
+
+.card-title span {
+    color: var(--muted);
+    font-size: 12px;
+}
+
+/* ================= FORM ================= */
+
+label {
+    display: block;
+    color: #cbdbea;
+    font-size: 13px;
+    font-weight: 600;
+    margin: 16px 0 7px;
+}
+
+select,
+input {
+    width: 100%;
+    padding: 12px 13px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: #091827;
+    color: white;
+    font-size: 14px;
+    outline: none;
+}
+
+select:focus,
+input:focus {
+    border-color: var(--primary);
+}
+
+/* ================= BUTTONS ================= */
+
+button {
+    width: 100%;
+    border: none;
+    border-radius: 11px;
+    padding: 13px;
+    margin-top: 15px;
+    color: white;
+    font-weight: 700;
+    cursor: pointer;
+    font-size: 14px;
+
+    background:
+        linear-gradient(
+            90deg,
+            #00acc1,
+            #2979ff
+        );
+
+    transition: 0.2s;
+}
+
+button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 25px rgba(41,121,255,0.3);
+}
+
+button:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.secondary {
+    background:
+        linear-gradient(
+            90deg,
+            #673ab7,
+            #9c27b0
+        );
+}
+
+.danger {
+    background:
+        linear-gradient(
+            90deg,
+            #d32f2f,
+            #f44336
+        );
+}
+
+/* ================= STATUS ================= */
+
+.status {
+    margin-top: 15px;
+    padding: 11px;
+    border-radius: 10px;
+    font-size: 12px;
+    text-align: center;
+    background: rgba(50,213,131,0.08);
+    color: var(--success);
+}
+
+/* ================= STATS ================= */
+
+.stats {
+    display: grid;
+    grid-template-columns:
+        repeat(4, minmax(0, 1fr));
+
+    gap: 13px;
+    margin-bottom: 18px;
+}
+
+.stat {
+    padding: 18px;
+    border-radius: 14px;
+    background: rgba(255,255,255,0.035);
+    border: 1px solid rgba(255,255,255,0.07);
+}
+
+.stat-label {
+    color: var(--muted);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.7px;
+}
+
+.stat-value {
+    margin-top: 8px;
+    font-size: 23px;
+    font-weight: 800;
+    color: var(--primary);
+}
+
+/* ================= PROGRESS ================= */
+
+.progress-container {
+    margin: 15px 0;
+}
+
+.progress-info {
+    display: flex;
+    justify-content: space-between;
+    color: var(--muted);
+    font-size: 11px;
+    margin-bottom: 7px;
+}
+
+.progress {
+    height: 8px;
+    background: #14283b;
+    border-radius: 20px;
+    overflow: hidden;
+}
+
+.progress-bar {
+    height: 100%;
+    width: 0%;
+    background:
+        linear-gradient(
+            90deg,
+            #00bcd4,
+            #7c4dff
+        );
+
+    transition: width 0.2s;
+}
+
+/* ================= CANVAS ================= */
+
+.chart-wrapper {
+    position: relative;
+    height: 440px;
+}
+
+canvas {
+    width: 100%;
+    height: 100%;
+    background: #07111c;
+    border-radius: 14px;
+    border: 1px solid #20394e;
+}
+
+/* ================= FORMULA ================= */
+
+.formula {
+    padding: 14px;
+    background: rgba(0,0,0,0.20);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 12px;
+    color: #d9e9f7;
+    font-family: "Courier New", monospace;
+    font-size: 12px;
+    line-height: 1.8;
+    overflow-x: auto;
+}
+
+/* ================= TABLE ================= */
+
+.table-wrapper {
+    overflow-x: auto;
+    max-height: 450px;
+    overflow-y: auto;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 700px;
+}
+
+th {
+    position: sticky;
+    top: 0;
+    background: #10283d;
+    color: var(--primary);
+    font-size: 12px;
+    text-align: left;
+}
+
+th,
+td {
+    padding: 11px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+td {
+    color: #cbdbea;
+    font-size: 12px;
+}
+
+.good {
+    color: var(--success);
+}
+
+.warn {
+    color: var(--warning);
+}
+
+/* ================= FOOTER ================= */
+
+.footer {
+    text-align: center;
+    padding: 30px;
+    color: var(--muted);
+    font-size: 12px;
+}
+
+/* ================= RESPONSIVE ================= */
+
+@media(max-width: 1050px) {
+
+    .layout {
+        grid-template-columns: 1fr;
+    }
+
+    .stats {
+        grid-template-columns:
+            repeat(2, 1fr);
+    }
+}
+
+@media(max-width: 600px) {
+
+    .container {
+        padding: 20px 4%;
+    }
+
+    .stats {
+        grid-template-columns: 1fr;
+    }
+
+    .chart-wrapper {
+        height: 320px;
+    }
+}
+</style>
+</head>
+
+
+<body>
+
+<!-- =====================================================
+     HEADER
+===================================================== -->
+
+<header class="header">
+
+<div class="header-inner">
+
+<div class="badge">
+DIGITAL COMMUNICATION • MONTE CARLO
+</div>
+
+<h1>Adaptive Monte Carlo BER Simulator</h1>
+
+<p>
+Professional browser-based simulation of BER versus
+Eb/N0 with adaptive stopping, explicit energy
+normalization, complex AWGN variance and theoretical
+BER overlay.
+</p>
+
+</div>
+
+</header>
+
+
+<!-- =====================================================
+     MAIN
+===================================================== -->
+
+<main class="container">
+
+<div class="layout">
+
+
+<!-- =====================================================
+     LEFT CONTROL PANEL
+===================================================== -->
+
+<section>
+
+<div class="card">
+
+<div class="card-title">
+<h2>Simulation Configuration</h2>
+<span>Parameters</span>
+</div>
+
+
+<label>Modulation</label>
+
+<select id="modulation">
+
+<option value="BPSK">
+BPSK
+</option>
+
+<option value="QPSK">
+QPSK
+</option>
+
+<option value="8PSK">
+8-PSK
+</option>
+
+<option value="16QAM">
+16-QAM
+</option>
+
+</select>
+
+
+<label>Eb/N0 Start (dB)</label>
+
+<input
+type="number"
+id="ebStart"
+value="0"
+step="1"
+>
+
+
+<label>Eb/N0 Stop (dB)</label>
+
+<input
+type="number"
+id="ebStop"
+value="12"
+step="1"
+>
+
+
+<label>Eb/N0 Step (dB)</label>
+
+<input
+type="number"
+id="ebStep"
+value="1"
+step="0.5"
+min="0.1"
+>
+
+
+<label>Maximum Bits / Point</label>
+
+<input
+type="number"
+id="maxBits"
+value="1000000"
+min="1000"
+max="1000000"
+>
+
+
+<label>Error Stop Threshold</label>
+
+<input
+type="number"
+id="maxErrors"
+value="200"
+min="1"
+>
+
+
+<button
+id="runBtn"
+onclick="runSimulation()"
+>
+▶ Run Monte Carlo Simulation
+</button>
+
+
+<button
+class="danger"
+onclick="stopSimulation()"
+>
+■ Stop Simulation
+</button>
+
+
+<button
+class="secondary"
+onclick="resetSimulation()"
+>
+↻ Reset
+</button>
+
+
+<div
+class="status"
+id="status"
+>
+Ready
+</div>
+
+</div>
+
+
+<!-- =====================================================
+     EXPLICIT PARAMETERS
+===================================================== -->
+
+<div class="card">
+
+<div class="card-title">
+<h2>System Parameters</h2>
+<span>Explicit</span>
+</div>
+
+<div class="formula">
+
+Eb/N0 = selected SNR parameter
+
+<br>
+
+k = log2(M) bits/symbol
+
+<br>
+
+Es = k × Eb
+
+<br>
+
+N0 = Eb / (Eb/N0)
+
+<br>
+
+σ²complex = N0
+
+<br>
+
+σ²real = N0 / 2
+
+<br>
+
+n = √(N0/2) × (nI + jnQ)
+
+<br>
+
+r = s + n
+
+<br>
+
+BER = errors / transmitted bits
+
+</div>
+
+</div>
+
+
+<!-- =====================================================
+     THEORY
+===================================================== -->
+
+<div class="card">
+
+<div class="card-title">
+<h2>Theoretical Model</h2>
+<span>AWGN</span>
+</div>
+
+<div class="formula">
+
+BPSK:
+
+Pb = 0.5 erfc(√Eb/N0)
+
+<br><br>
+
+QPSK:
+
+Pb = 0.5 erfc(√Eb/N0)
+
+<br><br>
+
+16-QAM:
+
+Pb ≈ (4/k)
+(1 − 1/√M)
+Q(√(3k/(M−1) × Eb/N0))
+
+<br><br>
+
+Theory is displayed only for
+supported coherent AWGN models.
+
+</div>
+
+</div>
+
+</section>
+
+
+<!-- =====================================================
+     RIGHT RESULTS PANEL
+===================================================== -->
+
+<section>
+
+
+<!-- STATS -->
+
+<div class="stats">
+
+<div class="stat">
+
+<div class="stat-label">
+Current Eb/N0
+</div>
+
+<div
+class="stat-value"
+id="currentEb"
+>
+--
+</div>
+
+</div>
+
+
+<div class="stat">
+
+<div class="stat-label">
+BER
+</div>
+
+<div
+class="stat-value"
+id="currentBER"
+>
+--
+</div>
+
+</div>
+
+
+<div class="stat">
+
+<div class="stat-label">
+Errors
+</div>
+
+<div
+class="stat-value"
+id="currentErrors"
+>
+--
+</div>
+
+</div>
+
+
+<div class="stat">
+
+<div class="stat-label">
+Bits
+</div>
+
+<div
+class="stat-value"
+id="currentBits"
+>
+--
+</div>
+
+</div>
+
+</div>
+
+
+<!-- PROGRESS -->
+
+<div class="card">
+
+<div class="progress-container">
+
+<div class="progress-info">
+
+<span id="progressText">
+Waiting for simulation...
+</span>
+
+<span id="progressPercent">
+0%
+</span>
+
+</div>
+
+<div class="progress">
+
+<div
+class="progress-bar"
+id="progressBar"
+>
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+
+<!-- =====================================================
+     BER CHART
+===================================================== -->
+
+<div class="card">
+
+<div class="card-title">
+
+<h2>BER Performance</h2>
+
+<span>
+Simulation + Theory
+</span>
+
+</div>
+
+<div class="chart-wrapper">
+
+<canvas
+id="berChart"
+>
+</canvas>
+
+</div>
+
+</div>
+
+
+<!-- =====================================================
+     RESULTS TABLE
+===================================================== -->
+
+<div class="card">
+
+<div class="card-title">
+
+<h2>Simulation Results</h2>
+
+<span>Per Eb/N0 Point</span>
+
+</div>
+
+<div class="table-wrapper">
+
+<table>
+
+<thead>
+
+<tr>
+
+<th>Eb/N0</th>
+
+<th>Bits/Symbol</th>
+
+<th>Eb</th>
+
+<th>N0</th>
+
+<th>Complex σ²</th>
+
+<th>Errors</th>
+
+<th>Bits</th>
+
+<th>BER</th>
+
+<th>Theory</th>
+
+<th>Stop Reason</th>
+
+</tr>
+
+</thead>
+
+<tbody id="resultsBody">
+</tbody>
+
+</table>
+
+</div>
+
+</div>
+
+
+</section>
+
+</div>
+
+</main>
+
+
+<footer class="footer">
+
+Adaptive Monte Carlo BER Driver •
+Digital Communication Simulation •
+BTech ECE Project
+
+</footer>
+
+
+<script>
+
+/* =========================================================
+   GLOBAL STATE
+========================================================= */
+
+let running = false;
+
+let stopRequested = false;
+
+let results = [];
+
+
+/* =========================================================
+   MODULATION INFORMATION
+========================================================= */
+
+function modulationInfo(name) {
+
+    switch(name) {
+
+        case "BPSK":
+            return {
+                M: 2,
+                k: 1,
+                type: "PSK"
+            };
+
+        case "QPSK":
+            return {
+                M: 4,
+                k: 2,
+                type: "PSK"
+            };
+
+        case "8PSK":
+            return {
+                M: 8,
+                k: 3,
+                type: "PSK"
+            };
+
+        case "16QAM":
+            return {
+                M: 16,
+                k: 4,
+                type: "QAM"
+            };
+    }
+}
+
+
+/* =========================================================
+   RANDOM GAUSSIAN
+========================================================= */
+
+function gaussianRandom() {
+
+    let u = 0;
+    let v = 0;
+
+    while(u === 0)
+        u = Math.random();
+
+    while(v === 0)
+        v = Math.random();
+
+    return Math.sqrt(
+        -2 * Math.log(u)
+    ) *
+    Math.cos(
+        2 * Math.PI * v
+    );
+}
+
+
+/* =========================================================
+   ERFC APPROXIMATION
+========================================================= */
+
+function erfc(x) {
+
+    const z = Math.abs(x);
+
+    const t =
+        1 /
+        (1 + 0.5 * z);
+
+    const ans =
+        t *
+        Math.exp(
+            -z*z
+            -1.26551223
+            + t *
+            (
+                1.00002368
+                + t *
+                (
+                    0.37409196
+                    + t *
+                    (
+                        0.09678418
+                        + t *
+                        (
+                            -0.18628806
+                            + t *
+                            (
+                                0.27886807
+                                + t *
+                                (
+                                    -1.13520398
+                                    + t *
+                                    (
+                                        1.48851587
+                                        + t *
+                                        (
+                                            -0.82215223
+                                            + t *
+                                            0.17087277
+                                        )
+                                    )
+                                )
+                            )
+                        )
+                    )
+                )
+            )
+        );
+
+    return x >= 0 ? ans : 2 - ans;
+}
+
+
+/* =========================================================
+   Q FUNCTION
+========================================================= */
+
+function Q(x) {
+
+    return 0.5 * erfc(
+        x / Math.sqrt(2)
+    );
+
+}
+
+
+/* =========================================================
+   GRAY CODE
+========================================================= */
+
+function gray(n) {
+
+    return n ^ (n >> 1);
+
+}
+
+
+/* =========================================================
+   PSK CONSTELLATION
+========================================================= */
+
+function createPSK(M) {
+
+    const points = [];
+
+    for(let i = 0; i < M; i++) {
+
+        const angle =
+            2 * Math.PI * i / M;
+
+        points.push({
+
+            index: i,
+
+            re: Math.cos(angle),
+
+            im: Math.sin(angle),
+
+            gray:
+                gray(i)
+
+        });
+
+    }
+
+    return points;
+}
+
+
+/* =========================================================
+   16-QAM CONSTELLATION
+========================================================= */
+
+function create16QAM() {
+
+    const points = [];
+
+    const levels = [-3,-1,1,3];
+
+    /*
+       Average raw energy:
+
+       Es = 10
+
+       Therefore normalization factor:
+       sqrt(10)
+    */
+
+    const norm =
+        Math.sqrt(10);
+
+    let index = 0;
+
+    for(let i = 0; i < 4; i++) {
+
+        for(let q = 0; q < 4; q++) {
+
+            points.push({
+
+                index: index++,
+
+                re:
+                    levels[i] / norm,
+
+                im:
+                    levels[q] / norm
+
+            });
+
+        }
+
+    }
+
+    return points;
+}
+
+
+/* =========================================================
+   CREATE CONSTELLATION
+========================================================= */
+
+function createConstellation(modulation) {
+
+    if(
+        modulation === "16QAM"
+    ) {
+
+        return create16QAM();
+
+    }
+
+    return createPSK(
+        modulationInfo(modulation).M
+    );
+}
+
+
+/* =========================================================
+   MINIMUM EUCLIDEAN DISTANCE
+========================================================= */
+
+function detectSymbol(
+    received,
+    constellation
+) {
+
+    let best =
+        constellation[0];
+
+    let minDistance =
+        Infinity;
+
+    for(
+        const point
+        of constellation
+    ) {
+
+        const dx =
+            received.re -
+            point.re;
+
+        const dy =
+            received.im -
+            point.im;
+
+        const distance =
+            dx*dx + dy*dy;
+
+        if(
+            distance < minDistance
+        ) {
+
+            minDistance =
+                distance;
+
+            best =
+                point;
+        }
+
+    }
+
+    return best;
+}
+
+
+/* =========================================================
+   RANDOM SYMBOL
+========================================================= */
+
+function randomSymbol(
+    constellation
+) {
+
+    return constellation[
+        Math.floor(
+            Math.random() *
+            constellation.length
+        )
+    ];
+
+}
+
+
+/* =========================================================
+   THEORETICAL BER
+========================================================= */
+
+function theoreticalBER(
+    modulation,
+    ebn0dB
+) {
+
+    const gamma =
+        Math.pow(
+            10,
+            ebn0dB / 10
+        );
+
+
+    /*
+       BPSK
+    */
+
+    if(
+        modulation === "BPSK"
+    ) {
+
+        return Q(
+            Math.sqrt(
+                2 * gamma
+            )
+        );
+
+    }
+
+
+    /*
+       Gray-coded QPSK
+    */
+
+    if(
+        modulation === "QPSK"
+    ) {
+
+        return Q(
+            Math.sqrt(
+                2 * gamma
+            )
+        );
+
+    }
+
+
+    /*
+       8-PSK approximate theory
+
+       Valid as a common coherent
+       Gray-coded approximation.
+    */
+
+    if(
+        modulation === "8PSK"
+    ) {
+
+        const M = 8;
+
+        const k = 3;
+
+        return (
+            2 / k
+        ) *
+        Q(
+            Math.sqrt(
+                2 * k * gamma
+            ) *
+            Math.sin(
+                Math.PI / M
+            )
+        );
+
+    }
+
+
+    /*
+       16-QAM approximate BER
+    */
+
+    if(
+        modulation === "16QAM"
+    ) {
+
+        const M = 16;
+
+        const k = 4;
+
+        return (
+            4 / k
+        ) *
+        (
+            1 -
+            1 / Math.sqrt(M)
+        ) *
+        Q(
+            Math.sqrt(
+                3 * k /
+                (M - 1) *
+                gamma
+            )
+        );
+
+    }
+
+    return null;
+}
+
+
+/* =========================================================
+   SIMULATION
+========================================================= */
+
+async function runSimulation() {
+
+    if(running)
+        return;
+
+    running = true;
+
+    stopRequested = false;
+
+    results = [];
+
+    document.getElementById(
+        "runBtn"
+    ).disabled = true;
+
+
+    const modulation =
+        document.getElementById(
+            "modulation"
+        ).value;
+
+
+    const start =
+        parseFloat(
+            document.getElementById(
+                "ebStart"
+            ).value
+        );
+
+
+    const stop =
+        parseFloat(
+            document.getElementById(
+                "ebStop"
+            ).value
+        );
+
+
+    const step =
+        parseFloat(
+            document.getElementById(
+                "ebStep"
+            ).value
+        );
+
+
+    const maxBits =
+        Math.min(
+            1000000,
+            parseInt(
+                document.getElementById(
+                    "maxBits"
+                ).value
+            )
+        );
+
+
+    const maxErrors =
+        parseInt(
+            document.getElementById(
+                "maxErrors"
+            ).value
+        );
+
+
+    const info =
+        modulationInfo(
+            modulation
+        );
+
+
+    const constellation =
+        createConstellation(
+            modulation
+        );
+
+
+    clearTable();
+
+
+    /*
+       Each Eb/N0 point
+    */
+
+    for(
+        let ebn0 = start;
+        ebn0 <= stop + 1e-9;
+        ebn0 += step
+    ) {
+
+        if(stopRequested)
+            break;
+
+
+        /*
+           Explicit energy definitions
+        */
+
+        const k =
+            info.k;
+
+
+        /*
+           Normalized constellation:
+           Es = 1
+        */
+
+        const Es = 1;
+
+        /*
+           Eb = Es / k
+        */
+
+        const Eb =
+            Es / k;
+
+
+        /*
+           Convert Eb/N0 from dB
+           to linear
+        */
+
+        const gamma =
+            Math.pow(
+                10,
+                ebn0 / 10
+            );
+
+
+        /*
+           N0 = Eb / gamma
+        */
+
+        const N0 =
+            Eb / gamma;
+
+
+        /*
+           For complex AWGN:
+
+           E{|n|²} = N0
+
+           Each real component:
+           variance = N0/2
+        */
+
+        const complexNoiseVariance =
+            N0;
+
+        const realNoiseVariance =
+            N0 / 2;
+
+
+        let errors = 0;
+
+        let bits = 0;
+
+        let stopReason =
+            "Maximum bits";
+
+
+        /*
+           Adaptive Monte Carlo loop
+
+           Stops when:
+
+           errors >= 200
+
+           OR
+
+           bits >= 10^6
+        */
+
+        while(
+            errors < maxErrors &&
+            bits < maxBits
+        ) {
+
+            if(stopRequested) {
+
+                stopReason =
+                    "User stopped";
+
+                break;
+            }
+
+
+            /*
+               Generate one random symbol
+            */
+
+            const transmitted =
+                randomSymbol(
+                    constellation
+                );
+
+
+            /*
+               Complex Gaussian noise
+
+               nI,nQ ~ N(0,N0/2)
+            */
+
+            const noiseI =
+                Math.sqrt(
+                    realNoiseVariance
+                ) *
+                gaussianRandom();
+
+
+            const noiseQ =
+                Math.sqrt(
+                    realNoiseVariance
+                ) *
+                gaussianRandom();
+
+
+            /*
+               Received signal
+
+               r = s + n
+            */
+
+            const received = {
+
+                re:
+                    transmitted.re +
+                    noiseI,
+
+                im:
+                    transmitted.im +
+                    noiseQ
+
+            };
+
+
+            /*
+               Minimum Euclidean
+               distance detection
+            */
+
+            const detected =
+                detectSymbol(
+                    received,
+                    constellation
+                );
+
+
+            /*
+               Symbol error
+
+               For Gray-coded systems,
+               count actual bit errors.
+            */
+
+            let txBits;
+
+            let rxBits;
+
+
+            if(
+                modulation === "16QAM"
+            ) {
+
+                /*
+                   Approximate bit labels
+                   for demonstration.
+                */
+
+                txBits =
+                    transmitted.index
+                    .toString(2)
+                    .padStart(4,"0");
+
+                rxBits =
+                    detected.index
+                    .toString(2)
+                    .padStart(4,"0");
+
+            } else {
+
+                txBits =
+                    transmitted.gray
+                    .toString(2)
+                    .padStart(
+                        info.k,
+                        "0"
+                    );
+
+                rxBits =
+                    detected.gray
+                    .toString(2)
+                    .padStart(
+                        info.k,
+                        "0"
+                    );
+            }
+
+
+            for(
+                let b = 0;
+                b < k;
+                b++
+            ) {
+
+                if(
+                    txBits[b] !==
+                    rxBits[b]
+                ) {
+
+                    errors++;
+                }
+
+            }
+
+
+            bits += k;
+
+
+            /*
+               Update live display
+            */
+
+            updateLiveStats(
+                ebn0,
+                errors,
+                bits,
+                maxBits
+            );
+
+
+            /*
+               Give browser time to render
+            */
+
+            if(
+                bits % (k * 2000) === 0
+            ) {
+
+                await new Promise(
+                    resolve =>
+                    setTimeout(
+                        resolve,
+                        0
+                    )
+                );
+            }
+
+        }
+
+
+        if(
+            stopRequested &&
+            stopReason !==
+            "User stopped"
+        ) {
+
+            stopReason =
+                "User stopped";
+        }
+
+
+        /*
+           If 200 errors reached
+        */
+
+        if(
+            errors >= maxErrors
+        ) {
+
+            stopReason =
+                "200 errors reached";
+        }
+
+
+        /*
+           If maximum bits reached
+        */
+
+        if(
+            bits >= maxBits &&
+            errors < maxErrors
+        ) {
+
+            stopReason =
+                "10⁶ bits reached";
+        }
+
+
+        const ber =
+            errors / bits;
+
+
+        const theory =
+            theoreticalBER(
+                modulation,
+                ebn0
+            );
+
+
+        results.push({
+
+            ebn0,
+            k,
+            Eb,
+            N0,
+            complexNoiseVariance,
+            errors,
+            bits,
+            ber,
+            theory,
+            stopReason
+
+        });
+
+
+        renderTable();
+
+        drawBERChart();
+
+
+        if(stopRequested)
+            break;
+
+    }
+
+
+    running = false;
+
+    document.getElementById(
+        "runBtn"
+    ).disabled = false;
+
+
+    document.getElementById(
+        "status"
+    ).textContent =
+        "Simulation completed.";
+
+}
+
+
+/* =========================================================
+   LIVE STATISTICS
+========================================================= */
+
+function updateLiveStats(
+    ebn0,
+    errors,
+    bits,
+    maxBits
+) {
+
+    document.getElementById(
+        "currentEb"
+    ).textContent =
+        ebn0.toFixed(2) +
+        " dB";
+
+
+    document.getElementById(
+        "currentBER"
+    ).textContent =
+        bits > 0
+        ? (errors / bits)
+            .toExponential(3)
+        : "--";
+
+
+    document.getElementById(
+        "currentErrors"
+    ).textContent =
+        errors.toLocaleString();
+
+
+    document.getElementById(
+        "currentBits"
+    ).textContent =
+        bits.toLocaleString();
+
+
+    const percentage =
+        Math.min(
+            100,
+            bits / maxBits * 100
+        );
+
+
+    document.getElementById(
+        "progressBar"
+    ).style.width =
+        percentage + "%";
+
+
+    document.getElementById(
+        "progressPercent"
+    ).textContent =
+        percentage.toFixed(1) +
+        "%";
+
+
+    document.getElementById(
+        "progressText"
+    ).textContent =
+        `Eb/N0 ${ebn0.toFixed(1)} dB • ` +
+        `${errors} errors / ` +
+        `${bits.toLocaleString()} bits`;
+
+}
+
+
+/* =========================================================
+   RENDER TABLE
+========================================================= */
+
+function renderTable() {
+
+    const tbody =
+        document.getElementById(
+            "resultsBody"
+        );
+
+    tbody.innerHTML = "";
+
+
+    results.forEach(row => {
+
+        const tr =
+            document.createElement("tr");
+
+
+        tr.innerHTML = `
+
+<td>
+${row.ebn0.toFixed(2)} dB
+</td>
+
+<td>
+${row.k}
+</td>
+
+<td>
+${row.Eb.toExponential(4)}
+</td>
+
+<td>
+${row.N0.toExponential(4)}
+</td>
+
+<td>
+${row.complexNoiseVariance.toExponential(4)}
+</td>
+
+<td>
+${row.errors.toLocaleString()}
+</td>
+
+<td>
+${row.bits.toLocaleString()}
+</td>
+
+<td class="good">
+${row.ber.toExponential(4)}
+</td>
+
+<td>
+${
+row.theory === null
+? "N/A"
+: row.theory.toExponential(4)
+}
+</td>
+
+<td>
+${row.stopReason}
+</td>
+
+`;
+
+        tbody.appendChild(tr);
+
+    });
+
+}
+
+
+/* =========================================================
+   CLEAR TABLE
+========================================================= */
+
+function clearTable() {
+
+    document.getElementById(
+        "resultsBody"
+    ).innerHTML = "";
+
+}
+
+
+/* =========================================================
+   BER CHART
+========================================================= */
+
+function drawBERChart() {
+
+    const canvas =
+        document.getElementById(
+            "berChart"
+        );
+
+
+    const ctx =
+        canvas.getContext("2d");
+
+
+    const rect =
+        canvas.getBoundingClientRect();
+
+
+    const dpr =
+        window.devicePixelRatio || 1;
+
+
+    canvas.width =
+        rect.width * dpr;
+
+    canvas.height =
+        rect.height * dpr;
+
+
+    ctx.scale(dpr,dpr);
+
+
+    const width =
+        rect.width;
+
+    const height =
+        rect.height;
+
+
+    ctx.clearRect(
+        0,
+        0,
+        width,
+        height
+    );
+
+
+    /*
+       Chart margins
+    */
+
+    const left = 65;
+    const right = 25;
+    const top = 25;
+    const bottom = 50;
+
+
+    const chartW =
+        width -
+        left -
+        right;
+
+
+    const chartH =
+        height -
+        top -
+        bottom;
+
+
+    /*
+       Background
+    */
+
+    ctx.fillStyle =
+        "#07111c";
+
+    ctx.fillRect(
+        0,
+        0,
+        width,
+        height
+    );
+
+
+    if(results.length === 0) {
+
+        ctx.fillStyle =
+            "#8fa9bf";
+
+        ctx.font =
+            "14px Arial";
+
+        ctx.fillText(
+            "Run simulation to display BER curve",
+            width / 2 - 110,
+            height / 2
+        );
+
+        return;
+    }
+
+
+    const xs =
+        results.map(
+            r => r.ebn0
+        );
+
+
+    const xMin =
+        Math.min(...xs);
+
+    const xMax =
+        Math.max(...xs);
+
+
+    /*
+       BER log axis
+
+       Clamp minimum to 10^-6
+    */
+
+    const yMin = 1e-6;
+
+    const yMax = 1;
+
+
+    function xPixel(x) {
+
+        if(xMax === xMin)
+            return left + chartW/2;
+
+        return left +
+            (
+                (x - xMin) /
+                (xMax - xMin)
+            ) *
+            chartW;
+    }
+
+
+    function yPixel(y) {
+
+        y = Math.max(
+            yMin,
+            Math.min(
+                yMax,
+                y
+            )
+        );
+
+
+        const logY =
+            Math.log10(y);
+
+
+        const logMin =
+            Math.log10(yMin);
+
+
+        const logMax =
+            Math.log10(yMax);
+
+
+        return top +
+            (
+                1 -
+                (
+                    (logY - logMin) /
+                    (logMax - logMin)
+                )
+            ) *
+            chartH;
+    }
+
+
+    /*
+       Grid
+    */
+
+    ctx.strokeStyle =
+        "#1b3449";
+
+    ctx.lineWidth = 1;
+
+    for(
+        let decade = 0;
+        decade >= -6;
+        decade--
+    ) {
+
+        const y =
+            yPixel(
+                Math.pow(
+                    10,
+                    decade
+                )
+            );
+
+
+        ctx.beginPath();
+
+        ctx.moveTo(
+            left,
+            y
+        );
+
+        ctx.lineTo(
+            left + chartW,
+            y
+        );
+
+        ctx.stroke();
+
+
+        ctx.fillStyle =
+            "#7e96aa";
+
+        ctx.font =
+            "11px Arial";
+
+        ctx.fillText(
+            "10^" + decade,
+            15,
+            y + 4
+        );
+    }
+
+
+    /*
+       X axis labels
+    */
+
+    const xCount =
+        Math.min(
+            10,
+            results.length
+        );
+
+
+    for(
+        let i = 0;
+        i < xCount;
+        i++
+    ) {
+
+        const row =
+            results[
+                Math.floor(
+                    i *
+                    (results.length - 1) /
+                    Math.max(
+                        1,
+                        xCount - 1
+                    )
+                )
+            ];
+
+
+        const x =
+            xPixel(
+                row.ebn0
+            );
+
+
+        ctx.fillStyle =
+            "#7e96aa";
+
+        ctx.font =
+            "11px Arial";
+
+        ctx.fillText(
+            row.ebn0.toFixed(1),
+            x - 10,
+            height - 20
+        );
+
+    }
+
+
+    /*
+       Axis
+    */
+
+    ctx.strokeStyle =
+        "#7c94a8";
+
+    ctx.beginPath();
+
+    ctx.moveTo(
+        left,
+        top
+    );
+
+    ctx.lineTo(
+        left,
+        top + chartH
+    );
+
+    ctx.lineTo(
+        left + chartW,
+        top + chartH
+    );
+
+    ctx.stroke();
+
+
+    /*
+       Simulation BER curve
+    */
+
+    ctx.strokeStyle =
+        "#26c6da";
+
+    ctx.lineWidth = 3;
+
+    ctx.beginPath();
+
+
+    results.forEach(
+        (row,index) => {
+
+            const x =
+                xPixel(
+                    row.ebn0
+                );
+
+            const y =
+                yPixel(
+                    row.ber
+                );
+
+
+            if(index === 0)
+                ctx.moveTo(x,y);
+
+            else
+                ctx.lineTo(x,y);
+
+        }
+    );
+
+
+    ctx.stroke();
+
+
+    /*
+       Simulation points
+    */
+
+    ctx.fillStyle =
+        "#26c6da";
+
+
+    results.forEach(
+        row => {
+
+            const x =
+                xPixel(
+                    row.ebn0
+                );
+
+            const y =
+                yPixel(
+                    row.ber
+                );
+
+
+            ctx.beginPath();
+
+            ctx.arc(
+                x,
+                y,
+                4,
+                0,
+                Math.PI * 2
+            );
+
+            ctx.fill();
+
+        }
+    );
+
+
+    /*
+       Theory curve
+    */
+
+    const theoryRows =
+        results.filter(
+            r =>
+            r.theory !== null &&
+            r.theory > 0
+        );
+
+
+    if(
+        theoryRows.length > 0
+    ) {
+
+        ctx.strokeStyle =
+            "#ffb020";
+
+        ctx.lineWidth = 2;
+
+        ctx.setLineDash(
+            [7,5]
+        );
+
+
+        ctx.beginPath();
+
+
+        theoryRows.forEach(
+            (row,index) => {
+
+                const x =
+                    xPixel(
+                        row.ebn0
+                    );
+
+                const y =
+                    yPixel(
+                        row.theory
+                    );
+
+
+                if(index === 0)
+                    ctx.moveTo(x,y);
+
+                else
+                    ctx.lineTo(x,y);
+
+            }
+        );
+
+
+        ctx.stroke();
+
+        ctx.setLineDash([]);
+
+    }
+
+
+    /*
+       Labels
+    */
+
+    ctx.fillStyle =
+        "#dbeafe";
+
+    ctx.font =
+        "12px Arial";
+
+
+    ctx.fillText(
+        "Eb/N0 (dB)",
+        width / 2 - 30,
+        height - 5
+    );
+
+
+    ctx.save();
+
+    ctx.translate(
+        15,
+        height / 2
+    );
+
+    ctx.rotate(
+        -Math.PI / 2
+    );
+
+    ctx.fillText(
+        "Bit Error Rate",
+        0,
+        0
+    );
+
+    ctx.restore();
+
+
+    /*
+       Legend
+    */
+
+    ctx.fillStyle =
+        "#26c6da";
+
+    ctx.fillRect(
+        width - 200,
+        25,
+        25,
+        3
+    );
+
+    ctx.fillStyle =
+        "#dbeafe";
+
+    ctx.fillText(
+        "Monte Carlo",
+        width - 165,
+        29
+    );
+
+
+    ctx.strokeStyle =
+        "#ffb020";
+
+    ctx.setLineDash(
+        [7,5]
+    );
+
+    ctx.beginPath();
+
+    ctx.moveTo(
+        width - 200,
+        45
+    );
+
+    ctx.lineTo(
+        width - 175,
+        45
+    );
+
+    ctx.stroke();
+
+    ctx.setLineDash([]);
+
+
+    ctx.fillStyle =
+        "#dbeafe";
+
+    ctx.fillText(
+        "Theory",
+        width - 165,
+        49
+    );
+
+}
+
+
+/* =========================================================
+   STOP
+========================================================= */
+
+function stopSimulation() {
+
+    if(!running)
+        return;
+
+    stopRequested = true;
+
+    document.getElementById(
+        "status"
+    ).textContent =
+        "Stopping simulation...";
+
+}
+
+
+/* =========================================================
+   RESET
+========================================================= */
+
+function resetSimulation() {
+
+    stopRequested = true;
+
+    running = false;
+
+    results = [];
+
+    clearTable();
+
+
+    document.getElementById(
+        "currentEb"
+    ).textContent = "--";
+
+
+    document.getElementById(
+        "currentBER"
+    ).textContent = "--";
+
+
+    document.getElementById(
+        "currentErrors"
+    ).textContent = "--";
+
+
+    document.getElementById(
+        "currentBits"
+    ).textContent = "--";
+
+
+    document.getElementById(
+        "progressBar"
+    ).style.width =
+        "0%";
+
+
+    document.getElementById(
+        "progressPercent"
+    ).textContent =
+        "0%";
+
+
+    document.getElementById(
+        "progressText"
+    ).textContent =
+        "Waiting for simulation...";
+
+
+    document.getElementById(
+        "status"
+    ).textContent =
+        "Ready";
+
+
+    document.getElementById(
+        "runBtn"
+    ).disabled = false;
+
+
+    const canvas =
+        document.getElementById(
+            "berChart"
+        );
+
+
+    const ctx =
+        canvas.getContext("2d");
+
+
+    ctx.clearRect(
+        0,
+        0,
+        canvas.width,
+        canvas.height
+    );
+
+}
+
+
+/* =========================================================
+   INITIAL CHART
+========================================================= */
+
+window.addEventListener(
+    "load",
+    () => {
+
+        drawBERChart();
+
+    }
+);
+
+
+window.addEventListener(
+    "resize",
+    () => {
+
+        drawBERChart();
+
+    }
+);
+
+</script>
+
+</body>
+</html>
